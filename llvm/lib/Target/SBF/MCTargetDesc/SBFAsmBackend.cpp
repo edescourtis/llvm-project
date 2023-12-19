@@ -7,11 +7,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "MCTargetDesc/SBFMCTargetDesc.h"
+#include "MCTargetDesc/SBFFixupKinds.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAssembler.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCFixup.h"
+#include "llvm/MC/MCFixupKindInfo.h"
 #include "llvm/MC/MCObjectWriter.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/Support/EndianStream.h"
@@ -47,7 +49,33 @@ public:
     return false;
   }
 
-  unsigned getNumFixupKinds() const override { return 1; }
+  unsigned getNumFixupKinds() const override { return SBF::NumTargetFixupKinds; }
+
+  const MCFixupKindInfo &getFixupKindInfo(MCFixupKind Kind) const override {
+    const static MCFixupKindInfo Infos[SBF::NumTargetFixupKinds] = {
+        // name, offset, bits, flags
+        {"fixup_sbf_hi32", 0, 32, 0},
+        {"fixup_sbf_lo32", 0, 32, 0},
+    };
+
+    if (Kind < FirstTargetFixupKind)
+      return MCAsmBackend::getFixupKindInfo(Kind);
+
+    assert(unsigned(Kind - FirstTargetFixupKind) < getNumFixupKinds() &&
+           "Invalid kind!");
+    return Infos[Kind - FirstTargetFixupKind];
+  }
+
+  bool shouldForceRelocation(const MCAssembler &Asm, const MCFixup &Fixup,
+                             const MCValue &Target) override {
+    switch ((SBF::Fixups)Fixup.getKind()) {
+    default:
+      return false;
+    case SBF::fixup_sbf_hi32:
+    case SBF::fixup_sbf_lo32:
+      return true;
+    }
+  }
 
   bool writeNopData(raw_ostream &OS, uint64_t Count,
                     const MCSubtargetInfo *STI) const override;

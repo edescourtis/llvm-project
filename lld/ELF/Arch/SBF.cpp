@@ -94,12 +94,12 @@ void SBF::relocate(uint8_t *loc, const Relocation &rel, uint64_t val) const {
       write32le(loc, val & 0xFFFFFFFF);
       break;
     }
-    case R_SBF_64_64: {
-      // Relocation of a lddw instruction
-      // 64 bit address is divided into the imm of this and the following
-      // instructions, lower 32 first.
+    case R_SBF_64_HI32: {
+      write32le(loc + 4, val >> 32);
+      break;
+    }
+    case R_SBF_64_LO32: {
       write32le(loc + 4, val & 0xFFFFFFFF);
-      write32le(loc + 8 + 4, val >> 32);
       break;
     }
     case R_SBF_64_ABS64: {
