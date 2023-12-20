@@ -62,8 +62,8 @@ unsigned SBFELFObjectWriter::getRelocType(MCContext &Ctx, const MCValue &Target,
   default:
     llvm_unreachable("invalid fixup kind!");
   case FK_SecRel_8:
-    // LD_imm64 instruction.
-    return ELF::R_SBF_64_64;
+    Ctx.reportError(Fixup.getLoc(), "8-byte relocations not supported");
+    return ELF::R_SBF_NONE;
   case FK_PCRel_4:
     // CALL instruction.
     return ELF::R_SBF_64_32;
@@ -72,7 +72,12 @@ unsigned SBFELFObjectWriter::getRelocType(MCContext &Ctx, const MCValue &Target,
     Ctx.reportError(Fixup.getLoc(), "2-byte relocations not supported");
     return ELF::R_SBF_NONE;
   case FK_Data_8:
-    return (isSolana && !relocAbs64) ? ELF::R_SBF_64_64 : ELF::R_SBF_64_ABS64;
+    if(isSolana && !relocAbs64) {
+      Ctx.reportError(Fixup.getLoc(), "8-byte relocations not supported");
+      return ELF::R_SBF_NONE;
+    } else {
+      return ELF::R_SBF_64_ABS64;
+    }
   case FK_Data_4:
     if (const MCSymbolRefExpr *A = Target.getSymA()) {
       const MCSymbol &Sym = A->getSymbol();

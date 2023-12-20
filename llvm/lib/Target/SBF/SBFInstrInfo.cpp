@@ -158,6 +158,7 @@ bool SBFInstrInfo::expandPostRAPseudo(MachineInstr &MI) const {
   case SBF::MEMCPY:
     expandMEMCPY(MI);
     return true;
+  case SBF::LD_pseudo:
   case SBF::LD_imm64:
     return expandLD_imm64(MI);
   default:
